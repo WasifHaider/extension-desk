@@ -13,7 +13,6 @@ import EventLog from './EventLog.vue';
 
 const { detail, timezone } = defineProps<{ detail: ExtensionRequestDetail; timezone: string }>();
 const emit = defineEmits<{
-  edit: [];
   act: [type: EngineOption['type']];
   decline: [reason: string];
   sendQuestion: [text: string];
@@ -48,7 +47,7 @@ const showDecline = () => !['APPROVED', 'DECLINED', 'NOT_EXTENSION'].includes(de
       v-else-if="detail.status !== 'NEEDS_DATE' && detail.status !== 'NOT_EXTENSION'"
       :detail="detail"
       :timezone="timezone"
-      @edit="emit('edit')"
+      @set-date="(iso) => emit('setDate', iso)"
     />
 
     <Timeline v-if="showTimeline()" :detail="detail" :timezone="timezone" />

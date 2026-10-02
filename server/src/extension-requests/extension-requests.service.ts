@@ -4,7 +4,7 @@ import { DateTime } from 'luxon';
 import { PrismaService } from '../prisma.service';
 import { settings } from '../config/settings';
 import { evaluateExtension } from '../extensions/engine/evaluateExtension';
-import { quoteExtension } from '../extensions/engine/quoteExtension';
+import { quoteExtension, formatMoney } from '../extensions/engine/quoteExtension';
 import { toEngineBooking, toEngineVehicle } from '../extensions/prismaMappers';
 import { Evaluation, OptionType } from '../extensions/engine/types';
 import { PAYMENT_PROVIDER } from './payment-provider.token';
@@ -200,7 +200,7 @@ export class ExtensionRequestsService {
           extensionRequestId: id,
           bookingId: booking.id,
           type: 'CHARGED',
-          detail: `Charged ${(quote.totalCents / 100).toFixed(2)}`,
+          detail: `Charged ${formatMoney(quote.totalCents)}`,
         },
       });
       await tx.event.create({
