@@ -35,3 +35,7 @@ Allowed without prompting: `npm run`, `npm test`, `npx prisma`, and read/stage/c
 3. `/clear` between phases.
 4. `/phase-check <n>` before moving on.
 5. Commit, then the next phase.
+
+### Phase 5b: Playground
+
+Optional, after Phase 5, first thing cut if time runs short. A `/playground` page exercising the same real pipeline (inbound message, parse, evaluate, approve/offer/decline) against isolated seed data, for manual testing of every extension case. No second code path; reuses Phase 1-5 components and endpoints.

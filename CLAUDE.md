@@ -17,6 +17,7 @@ Full spec: `docs/SPEC.md` (source of truth, never edit). Build only the phase yo
 - Everything works with `LLM_PROVIDER=none` (manual mode). Groq is runtime only.
 - Cut decision (user, 3 Oct): no `AnthropicProvider`. Providers are Groq + Null only; keep the `LlmProvider` interface and list the cut in the README "left out" table.
 - Scope cuts follow spec section 17 in order; never cut the "never cut" list.
+- Scope addition (user, 3 Oct): a Playground page (Phase 5b), built after Phase 5, only if time allows; it is the first thing cut. It uses the same pipeline as the demo and adds no second code path.
 
 ## Commands
 - `npm run setup`: install, migrate, seed

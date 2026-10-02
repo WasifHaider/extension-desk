@@ -7,7 +7,7 @@ argument-hint: "[phase-number]"
 
 Check phase $ARGUMENTS. Report only; fix nothing unless asked. Prefer grep and targeted reads over reading whole files.
 
-1. Read the "Done when" line for phase $ARGUMENTS in `docs/SPEC.md` section 14 (read only that phase block).
+1. Read the "Done when" line for phase $ARGUMENTS in `docs/SPEC.md` section 14 (read only that phase block). For 5b, use the Playground requirements in CLAUDE.md and the 5b prompt in the repo notes: Done when the checklist in step 2 below passes.
 2. Verify it. Run the commands it names (e.g. `npm run setup`, `npm run dev` briefly). Run `npm test` if the repo has tests.
 3. Grep `server/` and `web/` for violations of the non-negotiable and never-cut rules:
    - LLM output used for prices, shown times or options (anything in `server/src/llm` feeding pricing or message templates).
