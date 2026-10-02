@@ -250,9 +250,6 @@ export async function seed(prisma: PrismaClient): Promise<void> {
         createdAt: opts.receivedAt,
       },
     });
-    await prisma.event.create({
-      data: { bookingId: booking.id, type: 'MESSAGE_RECEIVED', detail: 'Request received', createdAt: opts.receivedAt },
-    });
 
     const context: InterpretationContext = {
       currentEndAt: booking.endAt,
@@ -296,6 +293,15 @@ export async function seed(prisma: PrismaClient): Promise<void> {
         },
       });
 
+      await prisma.event.create({
+        data: {
+          extensionRequestId: extensionRequest.id,
+          bookingId: booking.id,
+          type: 'MESSAGE_RECEIVED',
+          detail: 'Request received',
+          createdAt: opts.receivedAt,
+        },
+      });
       await prisma.event.create({
         data: {
           extensionRequestId: extensionRequest.id,
@@ -387,6 +393,15 @@ export async function seed(prisma: PrismaClient): Promise<void> {
           interpretationNote,
           status,
           optionsJson: null,
+          createdAt: opts.receivedAt,
+        },
+      });
+      await prisma.event.create({
+        data: {
+          extensionRequestId: extensionRequest.id,
+          bookingId: booking.id,
+          type: 'MESSAGE_RECEIVED',
+          detail: 'Request received',
           createdAt: opts.receivedAt,
         },
       });

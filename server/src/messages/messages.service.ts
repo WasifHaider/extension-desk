@@ -50,10 +50,6 @@ export class MessagesService {
       },
     });
 
-    await this.prisma.event.create({
-      data: { bookingId: booking.id, type: 'MESSAGE_RECEIVED', detail: 'Request received' },
-    });
-
     const now = DateTime.now().setZone(settings.timezone);
     const currentEndLocal = DateTime.fromJSDate(booking.endAt, { zone: 'utc' }).setZone(
       settings.timezone,
@@ -128,6 +124,14 @@ export class MessagesService {
       },
     });
 
+    await this.prisma.event.create({
+      data: {
+        extensionRequestId: extensionRequest.id,
+        bookingId: booking.id,
+        type: 'MESSAGE_RECEIVED',
+        detail: 'Request received',
+      },
+    });
     await this.prisma.event.create({
       data: {
         extensionRequestId: extensionRequest.id,

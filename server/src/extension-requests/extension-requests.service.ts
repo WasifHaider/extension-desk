@@ -4,6 +4,7 @@ import { DateTime } from 'luxon';
 import { PrismaService } from '../prisma.service';
 import { settings } from '../config/settings';
 import { evaluateExtension } from '../extensions/engine/evaluateExtension';
+import { quoteExtension } from '../extensions/engine/quoteExtension';
 import { toEngineBooking, toEngineVehicle } from '../extensions/prismaMappers';
 import { Evaluation, OptionType } from '../extensions/engine/types';
 import { PAYMENT_PROVIDER } from './payment-provider.token';
@@ -40,6 +41,15 @@ async function reEvaluate(tx: Tx, bookingId: string, requestedEndAt: Date): Prom
 
 function findOption(evaluation: Evaluation, optionType: OptionType) {
   return evaluation.options.find((o) => o.type === optionType) ?? null;
+}
+
+type Badge = 'CLEAN' | 'CONFLICT' | 'NEEDS_DATE' | 'OFFERED' | 'APPROVED' | 'DECLINED' | 'NOT_EXTENSION';
+
+function badgeFor(status: string, hasConflicts: boolean): Badge {
+  if (status === 'READY') {
+    return hasConflicts ? 'CONFLICT' : 'CLEAN';
+  }
+  return status as Badge;
 }
 
 @Injectable()
@@ -421,6 +431,122 @@ export class ExtensionRequestsService {
 
       return { ok: true as const };
     });
+  }
+
+  async listInbox() {
+    const requests = await this.prisma.extensionRequest.findMany({
+      include: { booking: { include: { vehicle: true, renter: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    return requests.map((r) => {
+      const hasConflicts = !!r.optionsJson && (JSON.parse(r.optionsJson) as Evaluation).conflicts.length > 0;
+      return {
+        id: r.id,
+        createdAt: r.createdAt,
+        renterName: r.booking.renter?.name ?? 'Turo guest',
+        vehicleName: r.booking.vehicle.name,
+        preview: r.rawText,
+        status: r.status,
+        badge: badgeFor(r.status, hasConflicts),
+      };
+    });
+  }
+
+  async getDetail(id: string) {
+    const extReq = await this.prisma.extensionRequest.findUnique({
+      where: { id },
+      include: {
+        booking: { include: { vehicle: true, renter: true } },
+        message: true,
+        charges: true,
+        events: { orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] },
+      },
+    });
+    if (!extReq) {
+      throw new NotFoundException('Extension request not found');
+    }
+
+    const [allBookingRows, allVehicles] = await Promise.all([
+      this.prisma.booking.findMany({ include: { renter: true } }),
+      this.prisma.vehicle.findMany(),
+    ]);
+
+    const requestedEndAtForEval = extReq.interpretedEndAt ?? extReq.chosenEndAt ?? extReq.booking.endAt;
+    const evaluation = evaluateExtension({
+      booking: toEngineBooking(extReq.booking),
+      requestedEndAt: requestedEndAtForEval,
+      bookings: allBookingRows.map(toEngineBooking),
+      vehicles: allVehicles.map(toEngineVehicle),
+      settings: engineSettings,
+    });
+
+    const nextBooking = evaluation.nextBooking;
+    const nextBookingRow = nextBooking ? allBookingRows.find((b) => b.id === nextBooking.id) ?? null : null;
+
+    const reassignOption = evaluation.options.find((o) => o.type === 'REASSIGN_NEXT');
+    const reassignInfo = reassignOption?.reassign
+      ? {
+          bookingId: reassignOption.reassign.bookingId,
+          toVehicleName: allVehicles.find((v) => v.id === reassignOption.reassign!.toVehicleId)?.name ?? '',
+          toVehicleCategory: allVehicles.find((v) => v.id === reassignOption.reassign!.toVehicleId)?.category ?? '',
+          nextRenterName: allBookingRows.find((b) => b.id === reassignOption.reassign!.bookingId)?.renter?.name ?? '',
+        }
+      : null;
+
+    const receipt =
+      extReq.status === 'APPROVED' && extReq.chosenOptionType && extReq.chosenEndAt
+        ? quoteExtension(
+            toEngineBooking({ ...extReq.booking, endAt: extReq.originalEndAt }),
+            extReq.chosenEndAt,
+            engineSettings,
+          ).lineItems
+        : null;
+
+    return {
+      id: extReq.id,
+      status: extReq.status,
+      createdAt: extReq.createdAt,
+      decidedAt: extReq.decidedAt,
+      rawText: extReq.rawText,
+      message: { body: extReq.message.body, createdAt: extReq.message.createdAt },
+      renter: extReq.booking.renter ? { id: extReq.booking.renter.id, name: extReq.booking.renter.name } : null,
+      vehicle: {
+        id: extReq.booking.vehicle.id,
+        name: extReq.booking.vehicle.name,
+        category: extReq.booking.vehicle.category,
+      },
+      hasCover: extReq.booking.coverageDailyCents > 0,
+      originalEndAt: extReq.originalEndAt,
+      currentEndAt: extReq.booking.endAt,
+      interpretedEndAt: extReq.interpretedEndAt,
+      interpretationNote: extReq.interpretationNote,
+      clarifyingQuestionDraft:
+        extReq.status === 'NEEDS_DATE'
+          ? (extReq.parsedJson ? JSON.parse(extReq.parsedJson).clarifying_question ?? null : null) ??
+            clarifyFallbackTemplate(extReq.booking.vehicle.name)
+          : null,
+      options: evaluation.options.filter((o) => o.type !== 'DECLINE'),
+      unavailable: evaluation.unavailable,
+      conflicts: evaluation.conflicts,
+      latestFreeEnd: evaluation.latestFreeEnd,
+      freeUntil: evaluation.freeUntil,
+      nextBooking: nextBookingRow
+        ? {
+            id: nextBookingRow.id,
+            source: nextBookingRow.source,
+            startAt: nextBookingRow.startAt,
+            endAt: nextBookingRow.endAt,
+            renterName: nextBookingRow.renter?.name ?? null,
+          }
+        : null,
+      reassign: reassignInfo,
+      chosenOptionType: extReq.chosenOptionType,
+      chosenEndAt: extReq.chosenEndAt,
+      declineReason: extReq.declineReason,
+      charge: extReq.charges[0] ? { amountCents: extReq.charges[0].amountCents } : null,
+      receipt,
+      events: extReq.events.map((e) => ({ id: e.id, type: e.type, detail: e.detail, createdAt: e.createdAt })),
+    };
   }
 }
 
