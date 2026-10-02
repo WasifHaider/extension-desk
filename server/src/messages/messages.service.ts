@@ -15,6 +15,13 @@ import { Evaluation } from '../extensions/engine/types';
 export class MessagesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async listForRenter(renterId: string) {
+    if (!renterId) {
+      throw new BadRequestException('renterId is required');
+    }
+    return this.prisma.message.findMany({ where: { renterId }, orderBy: { createdAt: 'asc' } });
+  }
+
   async receiveInbound(dto: InboundMessageDto) {
     if (!dto.renterId || !dto.body) {
       throw new BadRequestException('renterId and body are required');
