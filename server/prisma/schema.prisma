@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Vehicle {
+  id             String   @id @default(cuid())
+  name           String
+  category       String
+  seats          Int
+  dailyRateCents Int
+  plate          String
+
+  bookings Booking[]
+}
+
+model Renter {
+  id    String @id @default(cuid())
+  name  String
+  phone String
+
+  bookings Booking[]
+  messages Message[]
+}
+
+model Booking {
+  id                String    @id @default(cuid())
+  vehicleId         String
+  renterId          String?
+  source            String
+  status            String
+  startAt           DateTime
+  endAt             DateTime
+  dailyRateCents    Int
+  coverageDailyCents Int      @default(0)
+  coverageEndsAt    DateTime?
+
+  vehicle           Vehicle   @relation(fields: [vehicleId], references: [id])
+  renter            Renter?   @relation(fields: [renterId], references: [id])
+  messages          Message[]
+  extensionRequests ExtensionRequest[]
+  charges           Charge[]
+  events            Event[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  renterId  String
+  bookingId String?
+  direction String
+  body      String
+  status    String
+  createdAt DateTime @default(now())
+
+  renter  Renter   @relation(fields: [renterId], references: [id])
+  booking Booking? @relation(fields: [bookingId], references: [id])
+
+  extensionRequest ExtensionRequest?
+}
+
+model ExtensionRequest {
+  id                String    @id @default(cuid())
+  bookingId         String
+  messageId         String    @unique
+  rawText           String
+  intent            String
+  parsedJson        String?
+  originalEndAt     DateTime
+  interpretedEndAt  DateTime?
+  interpretationNote String?
+  status            String
+  optionsJson       String?
+  chosenOptionType  String?
+  chosenEndAt       DateTime?
+  declineReason     String?
+  createdAt         DateTime  @default(now())
+  decidedAt         DateTime?
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+  message Message @relation(fields: [messageId], references: [id])
+  charges Charge[]
+  events  Event[]
+}
+
+model Charge {
+  id                  String  @id @default(cuid())
+  bookingId           String
+  extensionRequestId  String  @unique
+  amountCents         Int
+  status              String
+  providerRef         String
+
+  booking           Booking           @relation(fields: [bookingId], references: [id])
+  extensionRequest  ExtensionRequest  @relation(fields: [extensionRequestId], references: [id])
+}
+
+model Event {
+  id                 String   @id @default(cuid())
+  extensionRequestId String?
+  bookingId          String?
+  type               String
+  detail             String?
+  createdAt          DateTime @default(now())
+
+  extensionRequest ExtensionRequest? @relation(fields: [extensionRequestId], references: [id])
+  booking          Booking?          @relation(fields: [bookingId], references: [id])
+}
