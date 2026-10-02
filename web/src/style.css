@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'IBM Plex Sans', Helvetica, Arial, sans-serif;
+
+  --color-canvas: #f6f6f5;
+  --color-surface: #ffffff;
+  --color-line: #e4e4e1;
+  --color-line-row: #efefed;
+  --color-line-strong: #d4d4d0;
+  --color-ink: #1c1c1a;
+  --color-ink-2: #4a4a46;
+  --color-muted: #6b6b66;
+  --color-faint: #8a8a85;
+  --color-accent: #5b3fd9;
+  --color-accent-hover: #4328b8;
+  --color-accent-tint: #f1eefc;
+  --color-green: #1b6b3a;
+  --color-green-bg: #e3f4e8;
+  --color-green-border: #bfe3cb;
+  --color-amber: #8a5300;
+  --color-amber-bg: #fdf0d5;
+  --color-blue: #1d5fa6;
+  --color-blue-bg: #e4effb;
+  --color-grey: #5f5f5a;
+  --color-grey-bg: #ededeb;
+  --color-mute: #8a8a85;
+  --color-mute-bg: #f2f2f0;
+  --color-danger: #c2362b;
+  --color-tl-trip: #4b5563;
+  --color-tl-next: #a15c07;
+  --color-tl-done: #1b6b3a;
+  --color-tl-ext: #ddd6f7;
+  --color-tl-ext-2: #f1eefc;
+  --color-tl-ext-border: #b5a8ee;
+  --color-tl-buffer: #c9c9c5;
+  --color-tl-buffer-2: #ededeb;
+  --color-tl-buffer-border: #bdbdb8;
+  --color-demo-bg: #ececea;
+  --color-demo-border: #bdbdb8;
+
+  --radius-chip: 4px;
+  --radius-btn: 6px;
+  --radius-card: 8px;
+  --radius-bubble: 16px;
+  --radius-pill: 999px;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: #1c1c1a;
+  background: #f6f6f5;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
