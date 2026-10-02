@@ -9,8 +9,8 @@ Spec: section 6, principles 1, 5 and 8 in section 3, parsing tests in section 13
 ## Rules
 - The LLM only parses the renter's message into the section 6 JSON. It never produces prices, times shown to users, availability or options.
 - Provider interface: `LlmProvider.parseExtensionRequest(input): Promise<RawParse>`.
-  - `GroqProvider` (default, JSON mode), `AnthropicProvider` (first on the cut line), `NullProvider` (always throws).
-  - `LLM_PROVIDER` selects: `groq | anthropic | none`.
+  - `GroqProvider` (default, JSON mode) and `NullProvider` (always throws). `AnthropicProvider` is cut (user decision); do not build it.
+  - `LLM_PROVIDER` selects: `groq | none`. Keep the interface so a provider stays a drop-in.
 - One shared file holds the system prompt and JSON schema. Every provider imports it; no per-provider prompt copies.
 - `GROQ_MODEL` comes from env. Never hardcode or guess a model name; fail clearly if it is unset.
 - Validate model output with zod. Invalid JSON, schema mismatch or API error means `NEEDS_DATE`.

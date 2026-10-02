@@ -15,6 +15,7 @@ Full spec: `docs/SPEC.md` (source of truth, never edit). Build only the phase yo
 - SQLite: enum-like fields are Strings validated in TS; JSON stored as text.
 - Every state change writes an Event.
 - Everything works with `LLM_PROVIDER=none` (manual mode). Groq is runtime only.
+- Cut decision (user, 3 Oct): no `AnthropicProvider`. Providers are Groq + Null only; keep the `LlmProvider` interface and list the cut in the README "left out" table.
 - Scope cuts follow spec section 17 in order; never cut the "never cut" list.
 
 ## Commands
