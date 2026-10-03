@@ -10,6 +10,10 @@ function overlaps(aStart: number, aEnd: number, bStart: number, bEnd: number): b
   return aStart < bEnd && bStart < aEnd;
 }
 
+function statusFor(startAt: Date): 'ACTIVE' | 'CONFIRMED' {
+  return startAt.getTime() <= Date.now() ? 'ACTIVE' : 'CONFIRMED';
+}
+
 @Injectable()
 export class PlaygroundService {
   constructor(private readonly prisma: PrismaService) {}
@@ -80,7 +84,7 @@ export class PlaygroundService {
         vehicleId: dto.vehicleId,
         renterId,
         source: dto.source,
-        status: 'CONFIRMED',
+        status: statusFor(startAt),
         startAt,
         endAt,
         dailyRateCents: vehicle.dailyRateCents,
@@ -117,6 +121,7 @@ export class PlaygroundService {
         vehicleId: dto.vehicleId,
         renterId,
         source: dto.source,
+        status: statusFor(startAt),
         startAt,
         endAt,
         dailyRateCents: vehicle.dailyRateCents,
