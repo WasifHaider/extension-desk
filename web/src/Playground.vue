@@ -44,6 +44,7 @@ async function loadBookings() {
 
 async function refresh() {
   inboxRows.value = await api.inbox(SCOPE);
+  renters.value = await api.renters(SCOPE);
   if (selectedId.value) {
     await loadDetail(selectedId.value);
   }
