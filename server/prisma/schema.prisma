@@ -14,6 +14,7 @@ model Vehicle {
   seats          Int
   dailyRateCents Int
   plate          String
+  scope          String   @default("DEMO")
 
   bookings Booking[]
 }
@@ -22,6 +23,7 @@ model Renter {
   id    String @id @default(cuid())
   name  String
   phone String
+  scope String @default("DEMO")
 
   bookings Booking[]
   messages Message[]

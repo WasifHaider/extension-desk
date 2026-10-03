@@ -133,6 +133,21 @@ export interface ExtensionRequestDetail {
   events: EventRow[];
 }
 
+export interface PlaygroundBooking {
+  id: string;
+  vehicleId: string;
+  renterId: string | null;
+  source: 'DIRECT' | 'TURO';
+  status: string;
+  startAt: string;
+  endAt: string;
+  dailyRateCents: number;
+  coverageDailyCents: number;
+  coverageEndsAt: string | null;
+  vehicle: Vehicle;
+  renter: { id: string; name: string } | null;
+}
+
 export interface Meta {
   operatorName: string;
   timezone: string;

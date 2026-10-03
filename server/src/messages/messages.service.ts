@@ -90,9 +90,10 @@ export class MessagesService {
       interpretedEndAt = result.interpretedEndAt;
       interpretationNote = result.interpretationNote;
 
+      const scope = booking.vehicle.scope;
       const [allBookings, allVehicles] = await Promise.all([
-        this.prisma.booking.findMany({ include: { renter: true } }),
-        this.prisma.vehicle.findMany(),
+        this.prisma.booking.findMany({ where: { vehicle: { scope } }, include: { renter: true } }),
+        this.prisma.vehicle.findMany({ where: { scope } }),
       ]);
       allVehiclesForEvents = allVehicles;
       evaluation = evaluateExtension({

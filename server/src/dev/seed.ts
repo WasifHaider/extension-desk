@@ -37,14 +37,16 @@ interface RawParseLike {
   clarifying_question: string | null;
 }
 
+const SCOPE = 'DEMO';
+
 export async function seed(prisma: PrismaClient): Promise<void> {
-  await prisma.event.deleteMany();
-  await prisma.charge.deleteMany();
-  await prisma.extensionRequest.deleteMany();
-  await prisma.message.deleteMany();
-  await prisma.booking.deleteMany();
-  await prisma.renter.deleteMany();
-  await prisma.vehicle.deleteMany();
+  await prisma.event.deleteMany({ where: { booking: { vehicle: { scope: SCOPE } } } });
+  await prisma.charge.deleteMany({ where: { booking: { vehicle: { scope: SCOPE } } } });
+  await prisma.extensionRequest.deleteMany({ where: { booking: { vehicle: { scope: SCOPE } } } });
+  await prisma.message.deleteMany({ where: { renter: { scope: SCOPE } } });
+  await prisma.booking.deleteMany({ where: { vehicle: { scope: SCOPE } } });
+  await prisma.renter.deleteMany({ where: { scope: SCOPE } });
+  await prisma.vehicle.deleteMany({ where: { scope: SCOPE } });
 
   const fleet = await Promise.all(
     [
@@ -266,8 +268,8 @@ export async function seed(prisma: PrismaClient): Promise<void> {
     let evaluation: ReturnType<typeof evaluateExtension> | null = null;
     if (result.status === 'RESOLVED') {
       const [allBookingRows, allVehicles] = await Promise.all([
-        prisma.booking.findMany({ include: { renter: true } }),
-        prisma.vehicle.findMany(),
+        prisma.booking.findMany({ where: { vehicle: { scope: SCOPE } }, include: { renter: true } }),
+        prisma.vehicle.findMany({ where: { scope: SCOPE } }),
       ]);
       evaluation = evaluateExtension({
         booking: toEngineBooking(booking),

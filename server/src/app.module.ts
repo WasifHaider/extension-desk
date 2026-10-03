@@ -7,9 +7,18 @@ import { VehiclesModule } from './vehicles/vehicles.module';
 import { RentersModule } from './renters/renters.module';
 import { MetaModule } from './meta/meta.module';
 import { DevModule } from './dev/dev.module';
+import { PlaygroundModule } from './playground/playground.module';
 
 @Module({
-  imports: [MessagesModule, ExtensionRequestsModule, VehiclesModule, RentersModule, MetaModule, DevModule],
+  imports: [
+    MessagesModule,
+    ExtensionRequestsModule,
+    VehiclesModule,
+    RentersModule,
+    MetaModule,
+    DevModule,
+    PlaygroundModule,
+  ],
   controllers: [BookingsController],
   providers: [PrismaService],
 })

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ExtensionRequestsService } from './extension-requests.service';
 import { ApproveDto, ClarifyDto, DeclineDto, InterpretationDto } from './dto';
 
@@ -7,8 +7,8 @@ export class ExtensionRequestsController {
   constructor(private readonly service: ExtensionRequestsService) {}
 
   @Get()
-  list() {
-    return this.service.listInbox();
+  list(@Query('scope') scope?: string) {
+    return this.service.listInbox(scope ?? 'DEMO');
   }
 
   @Get(':id')

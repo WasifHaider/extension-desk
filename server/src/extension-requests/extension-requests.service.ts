@@ -28,8 +28,12 @@ const engineSettings = {
 };
 
 async function reEvaluate(tx: Tx, bookingId: string, requestedEndAt: Date): Promise<Evaluation> {
-  const booking = await tx.booking.findUniqueOrThrow({ where: { id: bookingId } });
-  const [allBookings, allVehicles] = await Promise.all([tx.booking.findMany(), tx.vehicle.findMany()]);
+  const booking = await tx.booking.findUniqueOrThrow({ where: { id: bookingId }, include: { vehicle: true } });
+  const scope = booking.vehicle.scope;
+  const [allBookings, allVehicles] = await Promise.all([
+    tx.booking.findMany({ where: { vehicle: { scope } } }),
+    tx.vehicle.findMany({ where: { scope } }),
+  ]);
   return evaluateExtension({
     booking: toEngineBooking(booking),
     requestedEndAt,
@@ -314,7 +318,7 @@ export class ExtensionRequestsService {
         throw new ConflictException('Interpretation can only be edited from READY or NEEDS_DATE');
       }
 
-      const booking = await tx.booking.findUniqueOrThrow({ where: { id: extReq.bookingId } });
+      const booking = await tx.booking.findUniqueOrThrow({ where: { id: extReq.bookingId }, include: { vehicle: true } });
       const syntheticRaw = {
         intent: 'EXTEND' as const,
         date: toDateOnlyIso(requestedEndAt, settings.timezone),
@@ -332,9 +336,10 @@ export class ExtensionRequestsService {
       });
 
       if (result.status === 'RESOLVED') {
+        const scope = booking.vehicle.scope;
         const [allBookings, allVehicles] = await Promise.all([
-          tx.booking.findMany({ include: { renter: true } }),
-          tx.vehicle.findMany(),
+          tx.booking.findMany({ where: { vehicle: { scope } }, include: { renter: true } }),
+          tx.vehicle.findMany({ where: { scope } }),
         ]);
         const evaluation = evaluateExtension({
           booking: toEngineBooking(booking),
@@ -433,8 +438,9 @@ export class ExtensionRequestsService {
     });
   }
 
-  async listInbox() {
+  async listInbox(scope: string = 'DEMO') {
     const requests = await this.prisma.extensionRequest.findMany({
+      where: { booking: { vehicle: { scope } } },
       include: { booking: { include: { vehicle: true, renter: true } } },
       orderBy: { createdAt: 'desc' },
     });
@@ -466,9 +472,10 @@ export class ExtensionRequestsService {
       throw new NotFoundException('Extension request not found');
     }
 
+    const scope = extReq.booking.vehicle.scope;
     const [allBookingRows, allVehicles] = await Promise.all([
-      this.prisma.booking.findMany({ include: { renter: true } }),
-      this.prisma.vehicle.findMany(),
+      this.prisma.booking.findMany({ where: { vehicle: { scope } }, include: { renter: true } }),
+      this.prisma.vehicle.findMany({ where: { scope } }),
     ]);
 
     const requestedEndAtForEval = extReq.interpretedEndAt ?? extReq.chosenEndAt ?? extReq.booking.endAt;
