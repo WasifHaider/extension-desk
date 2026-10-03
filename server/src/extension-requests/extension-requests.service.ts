@@ -47,6 +47,12 @@ function findOption(evaluation: Evaluation, optionType: OptionType) {
   return evaluation.options.find((o) => o.type === optionType) ?? null;
 }
 
+const AFFIRMATIVE = /^\s*(yes|yeah|yep|yup|sure|ok(ay)?|confirm(ed)?|sounds good|go ahead)\b/i;
+
+function isAffirmative(body: string): boolean {
+  return AFFIRMATIVE.test(body);
+}
+
 type Badge = 'CLEAN' | 'CONFLICT' | 'NEEDS_DATE' | 'OFFERED' | 'APPROVED' | 'DECLINED' | 'NOT_EXTENSION';
 
 function badgeFor(status: string, hasConflicts: boolean): Badge {
@@ -79,6 +85,20 @@ export class ExtensionRequestsService {
       }
       if (!extReq.interpretedEndAt) {
         throw new ConflictException('No interpreted date to approve');
+      }
+      if (isPartialAccept) {
+        const offerSentEvent = await tx.event.findFirst({
+          where: { extensionRequestId: id, type: 'OFFER_SENT' },
+          orderBy: { createdAt: 'desc' },
+        });
+        const replies = offerSentEvent
+          ? await tx.message.findMany({
+              where: { bookingId: extReq.bookingId, direction: 'IN', createdAt: { gt: offerSentEvent.createdAt } },
+            })
+          : [];
+        if (!replies.some((m) => isAffirmative(m.body))) {
+          throw new ConflictException('Renter has not confirmed the offer yet');
+        }
       }
 
       const priorOptions: Evaluation = extReq.optionsJson ? JSON.parse(extReq.optionsJson) : null;
@@ -509,6 +529,17 @@ export class ExtensionRequestsService {
           ).lineItems
         : null;
 
+    let renterConfirmed = false;
+    if (extReq.status === 'OFFERED') {
+      const offerSentAt = extReq.events.find((e) => e.type === 'OFFER_SENT')?.createdAt;
+      if (offerSentAt) {
+        const replies = await this.prisma.message.findMany({
+          where: { bookingId: extReq.bookingId, direction: 'IN', createdAt: { gt: offerSentAt } },
+        });
+        renterConfirmed = replies.some((m) => isAffirmative(m.body));
+      }
+    }
+
     return {
       id: extReq.id,
       status: extReq.status,
@@ -552,6 +583,7 @@ export class ExtensionRequestsService {
       declineReason: extReq.declineReason,
       charge: extReq.charges[0] ? { amountCents: extReq.charges[0].amountCents } : null,
       receipt,
+      renterConfirmed,
       events: extReq.events.map((e) => ({ id: e.id, type: e.type, detail: e.detail, createdAt: e.createdAt })),
     };
   }

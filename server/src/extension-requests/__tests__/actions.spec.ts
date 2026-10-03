@@ -248,10 +248,68 @@ describe('extension request actions', () => {
     });
     expect(queuedMessages.length).toBeGreaterThanOrEqual(1);
 
+    await prisma.message.create({
+      data: { renterId: renter.id, bookingId: booking.id, direction: 'IN', body: 'yes', status: 'RECEIVED' },
+    });
+
     const accepted = await service.approve(extReq.id, 'PARTIAL');
     expect(accepted.conflict).toBe(false);
 
     const chargesAfterAccept = await prisma.charge.findMany({ where: { extensionRequestId: extReq.id } });
     expect(chargesAfterAccept).toHaveLength(1);
+  });
+
+  it('approving an OFFERED partial without a renter reply is refused', async () => {
+    const vehicle = await makeVehicle('No Reply Car');
+    const renter = await makeRenter('No Reply Renter');
+    const now = new Date();
+    const endAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const booking = await makeBooking({ vehicleId: vehicle.id, renterId: renter.id, startAt: now, endAt });
+
+    const conflictingBooking = await prisma.booking.create({
+      data: {
+        vehicleId: vehicle.id,
+        renterId: null,
+        source: 'TURO',
+        status: 'CONFIRMED',
+        startAt: new Date(endAt.getTime() + 3 * 60 * 60 * 1000),
+        endAt: new Date(endAt.getTime() + 27 * 60 * 60 * 1000),
+        dailyRateCents: 10000,
+        coverageDailyCents: 0,
+      },
+    });
+    createdBookingIds.push(conflictingBooking.id);
+
+    const requestedEndAt = new Date(endAt.getTime() + 2 * 24 * 60 * 60 * 1000);
+    const evaluation = evaluateExtension({
+      booking: toEngineBooking(booking),
+      requestedEndAt,
+      bookings: [toEngineBooking(booking), toEngineBooking(conflictingBooking)],
+      vehicles: [toEngineVehicle(vehicle)],
+      settings: engineSettings,
+    });
+
+    const extReq = await makeExtensionRequest({
+      bookingId: booking.id,
+      renterId: renter.id,
+      originalEndAt: endAt,
+      interpretedEndAt: requestedEndAt,
+      status: 'READY',
+      optionsJson: JSON.stringify(evaluation),
+    });
+
+    await service.offer(extReq.id);
+
+    // No renter reply yet — must refuse, even though the offer went out.
+    await expect(service.approve(extReq.id, 'PARTIAL')).rejects.toThrow('Renter has not confirmed the offer yet');
+
+    // An irrelevant reply (not affirmative) still doesn't unlock it.
+    await prisma.message.create({
+      data: { renterId: renter.id, bookingId: booking.id, direction: 'IN', body: 'what time is check-in?', status: 'RECEIVED' },
+    });
+    await expect(service.approve(extReq.id, 'PARTIAL')).rejects.toThrow('Renter has not confirmed the offer yet');
+
+    const charges = await prisma.charge.findMany({ where: { extensionRequestId: extReq.id } });
+    expect(charges).toHaveLength(0);
   });
 });

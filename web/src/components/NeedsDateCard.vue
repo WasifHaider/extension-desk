@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { DateTime } from 'luxon';
+import DateTimePicker from './ui/DateTimePicker.vue';
 
 const { draft, timezone } = defineProps<{ draft: string; timezone: string }>();
 const emit = defineEmits<{ sendQuestion: [text: string]; setDate: [iso: string] }>();
@@ -43,7 +44,7 @@ function checkCalendar() {
     </div>
     <div class="font-semibold text-ink">Set date manually</div>
     <div class="flex gap-2.5">
-      <input v-model="dateValue" type="datetime-local" class="border border-line-strong rounded-btn px-3 py-2 tabular-nums" />
+      <DateTimePicker v-model="dateValue" />
       <button
         class="border border-line-strong bg-surface rounded-btn px-4 py-2 cursor-pointer hover:bg-canvas"
         @click="checkCalendar"

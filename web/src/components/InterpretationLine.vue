@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { DateTime } from 'luxon';
 import type { ExtensionRequestDetail } from '../types';
 import { formatDateTime, formatDayLabel } from '../format';
+import DateTimePicker from './ui/DateTimePicker.vue';
 
 const { detail, timezone } = defineProps<{ detail: ExtensionRequestDetail; timezone: string }>();
 const emit = defineEmits<{ setDate: [iso: string] }>();
@@ -45,7 +46,7 @@ function save() {
     <a v-if="canEdit()" href="#" class="text-[13px]" @click.prevent="startEdit">Edit</a>
   </div>
   <div v-else class="flex gap-2.5 items-center">
-    <input v-model="dateValue" type="datetime-local" class="border border-line-strong rounded-btn px-3 py-2 tabular-nums" />
+    <DateTimePicker v-model="dateValue" />
     <button class="bg-accent text-white rounded-btn px-4 py-2 font-medium cursor-pointer hover:bg-accent-hover" @click="save">
       Save
     </button>

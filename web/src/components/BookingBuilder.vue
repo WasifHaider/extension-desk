@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import type { Vehicle, PlaygroundBooking } from '../types';
 import type { BookingFormInput } from '../api';
 import { formatDateTime, formatMoney } from '../format';
+import Dropdown from './ui/Dropdown.vue';
+import DateTimePicker from './ui/DateTimePicker.vue';
 
 const { vehicles, bookings, timezone } = defineProps<{
   vehicles: Vehicle[];
@@ -51,6 +53,16 @@ function edit(b: PlaygroundBooking) {
   form.hasCover = b.coverageDailyCents > 0;
 }
 
+const vehicleOptions = computed(() => vehicles.map((v) => ({ value: v.id, label: `${v.name} · ${v.category}` })));
+const sourceOptions = [
+  { value: 'DIRECT', label: 'Direct' },
+  { value: 'TURO', label: 'Turo' },
+];
+const sourceStr = computed({
+  get: () => form.source,
+  set: (v) => (form.source = v === 'TURO' ? 'TURO' : 'DIRECT'),
+});
+
 function submit() {
   if (!form.vehicleId || !form.startAt || !form.endAt) return;
   const input: BookingFormInput = {
@@ -77,16 +89,11 @@ function submit() {
     <form class="grid grid-cols-2 gap-3 text-[13px]" @submit.prevent="submit">
       <label class="flex flex-col gap-1">
         Vehicle
-        <select v-model="form.vehicleId" class="border border-line-strong rounded-btn px-2 py-1.5">
-          <option v-for="v in vehicles" :key="v.id" :value="v.id">{{ v.name }} · {{ v.category }}</option>
-        </select>
+        <Dropdown v-model="form.vehicleId" :options="vehicleOptions" placeholder="Choose vehicle" />
       </label>
       <label class="flex flex-col gap-1">
         Source
-        <select v-model="form.source" class="border border-line-strong rounded-btn px-2 py-1.5">
-          <option value="DIRECT">Direct</option>
-          <option value="TURO">Turo</option>
-        </select>
+        <Dropdown v-model="sourceStr" :options="sourceOptions" />
       </label>
       <label class="flex flex-col gap-1">
         Renter name
@@ -103,11 +110,11 @@ function submit() {
       </label>
       <label class="flex flex-col gap-1">
         Start
-        <input v-model="form.startAt" type="datetime-local" class="border border-line-strong rounded-btn px-2 py-1.5" />
+        <DateTimePicker v-model="form.startAt" />
       </label>
       <label class="flex flex-col gap-1">
         End
-        <input v-model="form.endAt" type="datetime-local" class="border border-line-strong rounded-btn px-2 py-1.5" />
+        <DateTimePicker v-model="form.endAt" />
       </label>
       <div class="col-span-2 flex gap-2">
         <button type="submit" class="bg-accent text-white rounded-btn px-3.5 py-1.5 text-[13px] font-medium cursor-pointer">

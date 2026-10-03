@@ -12,6 +12,10 @@ const props = defineProps<{
 const emit = defineEmits<{ act: [type: EngineOption['type']] }>();
 
 const available = !!props.option;
+
+function isDisabled(o: EngineOption): boolean {
+  return props.detail.status === 'OFFERED' && o.type === 'PARTIAL' && !props.detail.renterConfirmed;
+}
 </script>
 
 <template>
@@ -40,7 +44,8 @@ const available = !!props.option;
       </div>
       <div class="mt-3.5 flex items-center gap-3.5 flex-wrap">
         <button
-          class="bg-accent text-white rounded-btn px-5 py-2.5 font-medium cursor-pointer hover:bg-accent-hover"
+          class="bg-accent text-white rounded-btn px-5 py-2.5 font-medium cursor-pointer hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-accent"
+          :disabled="isDisabled(option)"
           @click="emit('act', option.type)"
         >
           {{ optionButton(option, detail.status) }}

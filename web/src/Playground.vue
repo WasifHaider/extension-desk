@@ -178,8 +178,7 @@ onMounted(async () => {
       :meta="meta"
       title="Extension Desk · Playground"
       reset-label="Reset playground"
-      nav-label="Back to demo"
-      nav-href="/"
+      current-page="playground"
       @reset="onReset"
     />
     <div class="grid grid-cols-[340px_minmax(0,1fr)_360px] flex-1 min-h-0">
@@ -207,6 +206,7 @@ onMounted(async () => {
         v-if="detail"
         :detail="detail"
         :timezone="meta?.timezone ?? 'America/New_York'"
+        :now-iso="meta?.now ?? new Date().toISOString()"
         @act="onAct"
         @decline="onDecline"
         @send-question="onSendQuestion"

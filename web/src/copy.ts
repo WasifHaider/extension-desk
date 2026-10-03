@@ -27,6 +27,7 @@ export function optionButton(o: EngineOption, status: string): string {
 
 export function optionNote(o: EngineOption, detail: ExtensionRequestDetail, status: string): string {
   if (status === 'OFFERED' && o.type === 'PARTIAL') {
+    if (detail.renterConfirmed) return 'Confirmed — ready to charge';
     const firstName = detail.renter?.name.split(' ')[0] ?? 'the renter';
     return `Waiting for ${firstName} to reply YES`;
   }

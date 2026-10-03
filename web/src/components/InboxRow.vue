@@ -14,7 +14,7 @@ const emit = defineEmits<{ click: [] }>();
 
 <template>
   <div
-    class="px-5 py-3 border-t border-line-row cursor-pointer"
+    class="px-5 py-3 border-t border-line-row cursor-pointer transition-ui"
     :class="[selected ? 'bg-accent-tint shadow-[inset_3px_0_0_var(--color-accent)]' : 'hover:bg-canvas', row.badge === 'NOT_EXTENSION' ? 'opacity-55' : '']"
     @click="emit('click')"
   >

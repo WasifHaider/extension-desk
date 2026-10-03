@@ -11,7 +11,7 @@ import OptionCard from './OptionCard.vue';
 import DeclineControl from './DeclineControl.vue';
 import EventLog from './EventLog.vue';
 
-const { detail, timezone } = defineProps<{ detail: ExtensionRequestDetail; timezone: string }>();
+const { detail, timezone, nowIso } = defineProps<{ detail: ExtensionRequestDetail; timezone: string; nowIso: string }>();
 const emit = defineEmits<{
   act: [type: EngineOption['type']];
   decline: [reason: string];
@@ -26,59 +26,63 @@ const showDecline = () => !['APPROVED', 'DECLINED', 'NOT_EXTENSION'].includes(de
 </script>
 
 <template>
-  <div class="p-9 flex flex-col gap-5 min-w-0 h-full overflow-y-auto">
-    <div>
-      <div class="flex items-center gap-2.5">
-        <div class="text-[22px] font-semibold text-ink">{{ detail.renter?.name ?? 'Turo guest' }}</div>
-        <span v-if="detail.hasCover" class="text-[12px] bg-grey-bg text-ink-2 rounded-chip px-2 py-0.5">Damage cover</span>
+  <Transition name="fade" mode="out-in">
+    <div :key="detail.id" class="p-9 flex flex-col gap-5 min-w-0 h-full overflow-y-auto">
+      <div>
+        <div class="flex items-center gap-2.5">
+          <div class="text-[22px] font-semibold text-ink">{{ detail.renter?.name ?? 'Turo guest' }}</div>
+          <span v-if="detail.hasCover" class="text-[12px] bg-grey-bg text-ink-2 rounded-chip px-2 py-0.5">Damage cover</span>
+        </div>
+        <div class="text-muted mt-1">
+          {{ detail.vehicle.name }} ·
+          <span class="text-ink font-medium tabular-nums">Due back {{ formatDateTime(dueEnd(), timezone) }}</span>
+          <span v-if="detail.status === 'APPROVED'" class="text-faint tabular-nums"> · was {{ formatDateTime(detail.originalEndAt, timezone) }}</span>
+        </div>
       </div>
-      <div class="text-muted mt-1">
-        {{ detail.vehicle.name }} ·
-        <span class="text-ink font-medium tabular-nums">Due back {{ formatDateTime(dueEnd(), timezone) }}</span>
-        <span v-if="detail.status === 'APPROVED'" class="text-faint tabular-nums"> · was {{ formatDateTime(detail.originalEndAt, timezone) }}</span>
-      </div>
-    </div>
 
-    <ChatBubble :body="detail.message.body" :created-at="detail.message.createdAt" :timezone="timezone" />
+      <ChatBubble :body="detail.message.body" :created-at="detail.message.createdAt" :timezone="timezone" />
 
-    <SuccessBanner v-if="detail.status === 'APPROVED'" :detail="detail" :timezone="timezone" />
-    <DeclinedBanner v-else-if="detail.status === 'DECLINED'" :detail="detail" />
-    <InterpretationLine
-      v-else-if="detail.status !== 'NEEDS_DATE' && detail.status !== 'NOT_EXTENSION'"
-      :detail="detail"
-      :timezone="timezone"
-      @set-date="(iso) => emit('setDate', iso)"
-    />
+      <Transition name="fade">
+        <SuccessBanner v-if="detail.status === 'APPROVED'" :detail="detail" :timezone="timezone" />
+        <DeclinedBanner v-else-if="detail.status === 'DECLINED'" :detail="detail" />
+        <InterpretationLine
+          v-else-if="detail.status !== 'NEEDS_DATE' && detail.status !== 'NOT_EXTENSION'"
+          :detail="detail"
+          :timezone="timezone"
+          @set-date="(iso) => emit('setDate', iso)"
+        />
+      </Transition>
 
-    <Timeline v-if="showTimeline()" :detail="detail" :timezone="timezone" />
+      <Timeline v-if="showTimeline()" :detail="detail" :timezone="timezone" :now-iso="nowIso" />
 
-    <NeedsDateCard
-      v-if="detail.status === 'NEEDS_DATE'"
-      :draft="detail.clarifyingQuestionDraft ?? ''"
-      :timezone="timezone"
-      @send-question="(text) => emit('sendQuestion', text)"
-      @set-date="(iso) => emit('setDate', iso)"
-    />
-
-    <div v-if="showOptionCards()" class="flex flex-col gap-3">
-      <OptionCard
-        v-for="(o, i) in detail.options"
-        :key="'opt-' + i"
-        :option="o"
-        :detail="detail"
+      <NeedsDateCard
+        v-if="detail.status === 'NEEDS_DATE'"
+        :draft="detail.clarifyingQuestionDraft ?? ''"
         :timezone="timezone"
-        @act="(type) => emit('act', type)"
+        @send-question="(text) => emit('sendQuestion', text)"
+        @set-date="(iso) => emit('setDate', iso)"
       />
-      <OptionCard
-        v-for="(u, i) in detail.unavailable.filter((x) => x.type === 'FULL' || x.type === 'REASSIGN_NEXT')"
-        :key="'unavail-' + i"
-        :unavailable="u"
-        :detail="detail"
-        :timezone="timezone"
-      />
-    </div>
-    <DeclineControl :visible="showDecline()" @decline="(reason) => emit('decline', reason)" />
 
-    <EventLog :events="detail.events" :timezone="timezone" />
-  </div>
+      <TransitionGroup v-if="showOptionCards()" name="fade" tag="div" class="flex flex-col gap-3">
+        <OptionCard
+          v-for="(o, i) in detail.options"
+          :key="'opt-' + i"
+          :option="o"
+          :detail="detail"
+          :timezone="timezone"
+          @act="(type) => emit('act', type)"
+        />
+        <OptionCard
+          v-for="(u, i) in detail.unavailable.filter((x) => x.type === 'FULL' || x.type === 'REASSIGN_NEXT')"
+          :key="'unavail-' + i"
+          :unavailable="u"
+          :detail="detail"
+          :timezone="timezone"
+        />
+      </TransitionGroup>
+      <DeclineControl :visible="showDecline()" @decline="(reason) => emit('decline', reason)" />
+
+      <EventLog :events="detail.events" :timezone="timezone" />
+    </div>
+  </Transition>
 </template>

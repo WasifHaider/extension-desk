@@ -127,7 +127,7 @@ onMounted(async () => {
 
 <template>
   <div class="h-screen flex flex-col">
-    <AppHeader :meta="meta" nav-label="Playground" nav-href="/playground" @reset="onReset" />
+    <AppHeader :meta="meta" current-page="demo" @reset="onReset" />
     <div class="grid grid-cols-[300px_minmax(0,1fr)_360px] flex-1 min-h-0">
       <InboxList
         :rows="inboxRows"
@@ -140,6 +140,7 @@ onMounted(async () => {
         v-if="detail"
         :detail="detail"
         :timezone="meta?.timezone ?? 'America/New_York'"
+        :now-iso="meta?.now ?? new Date().toISOString()"
         @act="onAct"
         @decline="onDecline"
         @send-question="onSendQuestion"

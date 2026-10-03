@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import type { RenterPickerEntry, Message } from '../types';
+import Dropdown from './ui/Dropdown.vue';
 
 const { renters, selectedRenterId, messages } = defineProps<{
   renters: RenterPickerEntry[];
@@ -11,8 +12,10 @@ const emit = defineEmits<{ selectRenter: [id: string]; send: [body: string] }>()
 
 const draft = ref('');
 
-function onSelect(e: Event) {
-  emit('selectRenter', (e.target as HTMLSelectElement).value);
+const renterOptions = computed(() => renters.map((r) => ({ value: r.id, label: `${r.name} · ${r.vehicleName}` })));
+
+function onSelect(id: string) {
+  emit('selectRenter', id);
 }
 
 function send() {
@@ -33,13 +36,12 @@ function send() {
       <div class="flex-1 bg-surface rounded-[28px] flex flex-col overflow-hidden">
         <div class="px-3.5 pt-3.5 pb-2.5 border-b border-line bg-[#FAFAF9]">
           <div class="text-[11px] text-faint text-center mb-1.5">Text Message · Hudson Drive</div>
-          <select
-            class="w-full border border-line-strong rounded-btn bg-surface px-2.5 py-1.5 text-[13px]"
-            :value="selectedRenterId ?? ''"
-            @change="onSelect"
-          >
-            <option v-for="r in renters" :key="r.id" :value="r.id">{{ r.name }} · {{ r.vehicleName }}</option>
-          </select>
+          <Dropdown
+            :model-value="selectedRenterId ?? ''"
+            :options="renterOptions"
+            placeholder="Choose renter"
+            @update:model-value="onSelect"
+          />
         </div>
         <div class="flex-1 p-3.5 flex flex-col gap-2 overflow-y-auto bg-surface">
           <div

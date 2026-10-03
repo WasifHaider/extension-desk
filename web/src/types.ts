@@ -130,6 +130,7 @@ export interface ExtensionRequestDetail {
   declineReason: string | null;
   charge: { amountCents: number } | null;
   receipt: QuoteLineItem[] | null;
+  renterConfirmed: boolean;
   events: EventRow[];
 }
 
