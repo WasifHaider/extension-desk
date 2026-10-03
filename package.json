@@ -6,7 +6,7 @@
     "web"
   ],
   "scripts": {
-    "setup": "npm install && dotenv -e .env -- npm run prisma:migrate -w server && dotenv -e .env -- npm run seed -w server",
+    "setup": "npm install && npm run prisma:generate -w server && dotenv -e .env -- npm run prisma:migrate -w server && dotenv -e .env -- npm run seed -w server",
     "dev": "dotenv -e .env -- concurrently -n server,web -c blue,green \"npm run start:dev -w server\" \"npm run dev -w web\"",
     "test": "dotenv -e .env -- npm test -w server",
     "reset": "dotenv -e .env -- npm run seed -w server"
