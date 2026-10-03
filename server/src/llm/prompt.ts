@@ -14,6 +14,7 @@ export const SYSTEM_PROMPT = `You parse a car renter's text message into structu
 Rules:
 - Resolve relative days ("sunday", "tomorrow") against *now*, given below.
 - "N more days" means the current trip end + N days.
+- Only set "weekday" when the renter's message itself names a weekday (e.g. "till sunday"). If the message gives a number of days, a date, or "tomorrow" with no named weekday, set "weekday": null — do not compute or guess one.
 - Never guess. If the day is unclear, set "date": null and write a short, friendly "clarifying_question".
 - Output JSON only, matching exactly this shape:
 ${JSON_SCHEMA_DESCRIPTION}`;
